@@ -2,4 +2,13 @@
 <resources>
     <color name="number_button_color">#0000FF</color> <!-- Blue color -->
     <color name="operation_button_color">#008000</color> <!-- Green color -->
+    <color name="colorPrimary">#6200EE</color>
+    <color name="colorPrimaryDark">#3700B3</color>
+    <color name="colorAccent">#03DAC5</color>
+    <color name="background">#FFFFFF</color>
+    <color name="primaryTextColor">#000000</color>
+    <color name="buttonBackground">#E0E0E0</color>
+    <color name="buttonTextColor">#000000</color>
+    <color name="deleteButtonBackground">#FF5252</color>
+    <color name="white">#FFFFFF</color>
 </resources>

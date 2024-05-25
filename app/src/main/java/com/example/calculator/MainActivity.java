@@ -1,11 +1,15 @@
 package com.example.calculator;
 
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -18,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<String> historyList;
     ListView historyListView;
     ArrayAdapter<String> historyAdapter;
+    CalculatorDatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,9 +33,12 @@ public class MainActivity extends AppCompatActivity {
         expression = new StringBuilder();
         historyList = new ArrayList<>();
         historyListView = findViewById(R.id.historyListView);
+        dbHelper = new CalculatorDatabaseHelper(this);
 
         historyAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, historyList);
         historyListView.setAdapter(historyAdapter);
+
+        loadHistoryFromDatabase();
 
         Button btn0 = findViewById(R.id.btn0);
         Button btn1 = findViewById(R.id.btn1);
@@ -53,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
         Button btnSquare = findViewById(R.id.btnSquare);
         Button btnSquareRoot = findViewById(R.id.btnSquareRoot);
         Button historyButton = findViewById(R.id.historyButton);
+        Button btnDeleteAllHistory = findViewById(R.id.btnDeleteAllHistory);
 
         View.OnClickListener onClickListener = new View.OnClickListener() {
             @Override
@@ -70,8 +79,8 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         double result = evaluate(expression.toString());
                         String resultString = result % 1 == 0 ? String.valueOf((int) result) : String.valueOf(result);
-                        historyList.add(expression.toString() + " = " + resultString);
-                        historyAdapter.notifyDataSetChanged();
+                        addHistoryToDatabase(expression.toString(), result);
+                        loadHistoryFromDatabase();
                         expression = new StringBuilder(resultString);
                     } catch (Exception e) {
                         expression = new StringBuilder("Error");
@@ -80,8 +89,8 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         double result = Math.pow(Double.parseDouble(expression.toString()), 2);
                         String resultString = result % 1 == 0 ? String.valueOf((int) result) : String.valueOf(result);
-                        historyList.add(expression.toString() + "^2 = " + resultString);
-                        historyAdapter.notifyDataSetChanged();
+                        addHistoryToDatabase(expression.toString() + "^2", result);
+                        loadHistoryFromDatabase();
                         expression = new StringBuilder(resultString);
                     } catch (Exception e) {
                         expression = new StringBuilder("Error");
@@ -90,8 +99,8 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         double result = Math.sqrt(Double.parseDouble(expression.toString()));
                         String resultString = result % 1 == 0 ? String.valueOf((int) result) : String.valueOf(result);
-                        historyList.add("sqrt(" + expression.toString() + ") = " + resultString);
-                        historyAdapter.notifyDataSetChanged();
+                        addHistoryToDatabase("sqrt(" + expression.toString() + ")", result);
+                        loadHistoryFromDatabase();
                         expression = new StringBuilder(resultString);
                     } catch (Exception e) {
                         expression = new StringBuilder("Error");
@@ -124,16 +133,78 @@ public class MainActivity extends AppCompatActivity {
         btnSquare.setOnClickListener(onClickListener);
         btnSquareRoot.setOnClickListener(onClickListener);
 
+
         historyButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (historyListView.getVisibility() == View.GONE) {
                     historyListView.setVisibility(View.VISIBLE);
+                    btnDeleteAllHistory.setVisibility(View.VISIBLE); // Show delete history button
                 } else {
                     historyListView.setVisibility(View.GONE);
+                    btnDeleteAllHistory.setVisibility(View.GONE); // Hide delete history button
                 }
             }
         });
+
+        btnDeleteAllHistory.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                deleteAllHistory();
+            }
+        });
+
+
+        btnDeleteAllHistory.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                deleteAllHistory();
+            }
+        });
+    }
+
+    private void addHistoryToDatabase(String expression, double result) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(CalculatorContract.HistoryEntry.COLUMN_EXPRESSION, expression);
+        values.put(CalculatorContract.HistoryEntry.COLUMN_RESULT, result);
+        db.insert(CalculatorContract.HistoryEntry.TABLE_NAME, null, values);
+    }
+
+    private void loadHistoryFromDatabase() {
+        historyList.clear();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Cursor cursor = db.query(
+                CalculatorContract.HistoryEntry.TABLE_NAME,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+
+        while (cursor.moveToNext()) {
+            String expression = cursor.getString(cursor.getColumnIndexOrThrow(CalculatorContract.HistoryEntry.COLUMN_EXPRESSION));
+            double result = cursor.getDouble(cursor.getColumnIndexOrThrow(CalculatorContract.HistoryEntry.COLUMN_RESULT));
+            String historyItem = expression + " = " + result;
+            historyList.add(historyItem);
+        }
+        cursor.close();
+        historyAdapter.notifyDataSetChanged();
+    }
+
+    private void deleteAllHistory() {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        int deletedRows = db.delete(CalculatorContract.HistoryEntry.TABLE_NAME, null, null);
+
+        if (deletedRows > 0) {
+            historyList.clear();
+            historyAdapter.notifyDataSetChanged();
+            Toast.makeText(this, "Tout l'historique supprimé", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Aucun historique à supprimer", Toast.LENGTH_SHORT).show();
+        }
     }
 
     public static double evaluate(final String str) {

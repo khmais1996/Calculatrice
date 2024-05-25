@@ -239,6 +239,14 @@
         android:layout_weight="1"
         android:visibility="gone"
         android:divider="@null"
-        android:dividerHeight="0dp" />
+        android:dividerHeight="0dp"  />
+    <Button
+        android:id="@+id/btnDeleteAllHistory"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Supprimer tout l'historique"
+        android:layout_gravity="center"
+        android:layout_marginTop="16dp"/>
+
 
 </LinearLayout>
