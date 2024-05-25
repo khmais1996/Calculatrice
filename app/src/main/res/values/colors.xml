@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="number_button_color">#0000FF</color> <!-- Blue color -->
+    <color name="operation_button_color">#008000</color> <!-- Green color -->
+</resources>
